@@ -31,6 +31,8 @@
 #include <stdint.h>
 #include <cstdio>
 
+typedef unsigned char byte;
+
 namespace simple
 {
 	enum class Endian
@@ -251,7 +253,7 @@ public:
 		read_length += sizeof(T);
 		simple::swap_endian_if_same_endian_is_false(t, m_same_type);
 	}
-	void read(typename std::vector<char>& vec)
+	void read(typename std::vector<byte>& vec)
 	{
 		if (std::fread(reinterpret_cast<void*>(&vec[0]), vec.size(), 1, input_file_ptr) != 1)
 		{
@@ -259,7 +261,7 @@ public:
 		}
 		read_length += vec.size();
 	}
-	void read(char* p, size_t size)
+	void read(byte* p, size_t size)
 	{
 		if (std::fread(reinterpret_cast<void*>(p), size, 1, input_file_ptr) != 1)
 		{
@@ -300,9 +302,9 @@ template<typename same_endian_type>
 	if(size<=0)
 		return istm;
 
-	std::vector<char> vec((size_t)size);
+	std::vector<byte> vec((size_t)size);
 	istm.read(vec);
-	val.assign(&vec[0], (size_t)size);
+	val.assign((const char *)&vec[0], (size_t)size);
 
 	return istm;
 }
@@ -312,17 +314,17 @@ class mem_istream
 {
 public:
 	mem_istream() : m_index(0) {}
-	mem_istream(const char * mem, size_t size) 
+	mem_istream(const byte * mem, size_t size)
 	{
 		open(mem, size);
 	}
-	mem_istream(const std::vector<char>& vec) 
+	mem_istream(const std::vector<byte>& vec)
 	{
 		m_index = 0;
 		m_vec.reserve(vec.size());
 		m_vec.assign(vec.begin(), vec.end());
 	}
-	void open(const char * mem, size_t size)
+	void open(const byte * mem, size_t size)
 	{
 		m_index = 0;
 		m_vec.clear();
@@ -364,7 +366,7 @@ public:
 		return true;
 	}
 
-	const std::vector<char>& get_internal_vec()
+	const std::vector<byte>& get_internal_vec()
 	{
 		return m_vec;
 	}
@@ -385,7 +387,7 @@ public:
 		m_index += sizeof(T);
 	}
 
-	void read(typename std::vector<char>& vec)
+	void read(typename std::vector<byte>& vec)
 	{
 		if (eof())
 			throw std::runtime_error("Premature end of array!");
@@ -398,7 +400,7 @@ public:
 		m_index += vec.size();
 	}
 
-	void read(char* p, size_t size)
+	void read(byte* p, size_t size)
 	{
 		if(eof())
 			throw std::runtime_error("Premature end of array!");
@@ -419,13 +421,13 @@ public:
 		if ((m_index + size) > m_vec.size())
 			throw std::runtime_error("Premature end of array!");
 
-		str.assign(&m_vec[m_index], size);
+		str.assign((const char *)&m_vec[m_index], size);
 
 		m_index += str.size();
 	}
 
 private:
-	std::vector<char> m_vec;
+	std::vector<byte> m_vec;
 	size_t m_index;
 	same_endian_type m_same_type;
 };
@@ -459,17 +461,17 @@ class ptr_istream
 {
 public:
 	ptr_istream() : m_arr(nullptr), m_size(0), m_index(0) {}
-	ptr_istream(const char * mem, size_t size) : m_arr(nullptr), m_size(0), m_index(0)
+	ptr_istream(const byte * mem, size_t size) : m_arr(nullptr), m_size(0), m_index(0)
 	{
 		open(mem, size);
 	}
-	ptr_istream(const std::vector<char>& vec)
+	ptr_istream(const std::vector<byte>& vec)
 	{
 		m_index = 0;
 		m_arr = vec.data();
 		m_size = vec.size();
 	}
-	void open(const char * mem, size_t size)
+	void open(const byte * mem, size_t size)
 	{
 		m_index = 0;
 		m_arr = mem;
@@ -526,7 +528,7 @@ public:
 		m_index += sizeof(T);
 	}
 
-	void read(typename std::vector<char>& vec)
+	void read(typename std::vector<byte>& vec)
 	{
 		if (eof())
 			throw std::runtime_error("Premature end of array!");
@@ -539,7 +541,7 @@ public:
 		m_index += vec.size();
 	}
 
-	void read(char* p, size_t size)
+	void read(byte* p, size_t size)
 	{
 		if (eof())
 			throw std::runtime_error("Premature end of array!");
@@ -560,13 +562,13 @@ public:
 		if ((m_index + size) > m_size)
 			throw std::runtime_error("Premature end of array!");
 
-		str.assign(&m_arr[m_index], size);
+		str.assign((const char *)&m_arr[m_index], size);
 
 		m_index += str.size();
 	}
 
 private:
-	const char* m_arr;
+	const byte* m_arr;
 	size_t m_size;
 	size_t m_index;
 	same_endian_type m_same_type;
@@ -626,7 +628,7 @@ public:
 		std::FILE* input_file_ptr = std::fopen(file, "rb");
 #endif
 		compute_length(input_file_ptr);
-		m_arr = new char[m_size];
+		m_arr = new byte[m_size];
 		std::fread(m_arr, m_size, 1, input_file_ptr);
 		fclose(input_file_ptr);
 	}
@@ -637,7 +639,7 @@ public:
 		std::FILE* input_file_ptr = nullptr;
 		_wfopen_s(&input_file_ptr, file, L"rb");
 		compute_length(input_file_ptr);
-		m_arr = new char[m_size];
+		m_arr = new byte[m_size];
 		std::fread(m_arr, m_size, 1, input_file_ptr);
 		fclose(input_file_ptr);
 	}
@@ -705,7 +707,7 @@ public:
 		m_index += sizeof(T);
 	}
 
-	void read(typename std::vector<char>& vec)
+	void read(typename std::vector<byte>& vec)
 	{
 		if (eof())
 			throw std::runtime_error("Premature end of array!");
@@ -718,7 +720,7 @@ public:
 		m_index += vec.size();
 	}
 
-	void read(char* p, size_t size)
+	void read(byte* p, size_t size)
 	{
 		if (eof())
 			throw std::runtime_error("Premature end of array!");
@@ -739,7 +741,7 @@ public:
 		if ((m_index + size) > m_size)
 			throw std::runtime_error("Premature end of array!");
 
-		str.assign(&m_arr[m_index], size);
+		str.assign((const char *)&m_arr[m_index], size);
 
 		m_index += str.size();
 	}
@@ -752,7 +754,7 @@ private:
 		std::fseek(input_file_ptr, 0, SEEK_SET);
 	}
 
-	char* m_arr;
+    byte* m_arr;
 	size_t m_size;
 	size_t m_index;
 	same_endian_type m_same_type;
@@ -843,11 +845,11 @@ public:
 		simple::swap_endian_if_same_endian_is_false(t2, m_same_type);
 		std::fwrite(reinterpret_cast<const void*>(&t2), sizeof(T), 1, output_file_ptr);
 	}
-	void write(const std::vector<char>& vec)
+	void write(const std::vector<byte>& vec)
 	{
 		std::fwrite(reinterpret_cast<const void*>(&vec[0]), vec.size(), 1, output_file_ptr);
 	}
-	void write(const char* p, size_t size)
+	void write(const byte* p, size_t size)
 	{
 		std::fwrite(reinterpret_cast<const void*>(p), size, 1, output_file_ptr);
 	}
@@ -874,7 +876,7 @@ template<typename same_endian_type>
 	if(val.size()<=0)
 		return ostm;
 
-	ostm.write(val.c_str(), val.size());
+	ostm.write((const byte *)val.c_str(), val.size());
 
 	return ostm;
 }
@@ -888,7 +890,7 @@ template<typename same_endian_type>
 	if(size<=0)
 		return ostm;
 
-	ostm.write(val, size);
+	ostm.write((const byte *)val, size);
 
 	return ostm;
 }
@@ -902,24 +904,24 @@ public:
 	{
 		m_vec.clear();
 	}
-	const std::vector<char>& get_internal_vec()
+	const std::vector<byte>& get_internal_vec()
 	{
 		return m_vec;
 	}
 	template<typename T>
 	void write(const T& t)
 	{
-		std::vector<char> vec(sizeof(T));
+		std::vector<byte> vec(sizeof(T));
 		T t2 = t;
 		simple::swap_endian_if_same_endian_is_false(t2, m_same_type);
 		std::memcpy(reinterpret_cast<void*>(&vec[0]), reinterpret_cast<const void*>(&t2), sizeof(T));
 		write(vec);
 	}
-	void write(const std::vector<char>& vec)
+	void write(const std::vector<byte>& vec)
 	{
 		m_vec.insert(m_vec.end(), vec.begin(), vec.end());
 	}
-	void write(const char* p, size_t size)
+	void write(const byte* p, size_t size)
 	{
 		for(size_t i=0; i<size; ++i)
 			m_vec.push_back(p[i]);
@@ -927,20 +929,20 @@ public:
 	template<typename T>
 	void writeat(size_t pos, const T& t)
 	{
-		std::vector<char> vec(sizeof(T));
+		std::vector<byte> vec(sizeof(T));
 		T t2 = t;
 		simple::swap_endian_if_same_endian_is_false(t2, m_same_type);
 		std::memcpy(reinterpret_cast<void*>(&vec[0]), reinterpret_cast<const void*>(&t2), sizeof(T));
 		writeat(pos, vec);
 	}
 
-	void writeat(size_t pos, const std::vector<char>& vec)
+	void writeat(size_t pos, const std::vector<byte>& vec)
 	{
 		for (size_t n = 0, count = vec.size(); n < count; n++)
 			m_vec[pos++] = vec[n];
 	}
 private:
-	std::vector<char> m_vec;
+	std::vector<byte> m_vec;
 	same_endian_type m_same_type;
 };
 
@@ -961,7 +963,7 @@ template<typename same_endian_type>
 	if(val.size()<=0)
 		return ostm;
 
-	ostm.write(val.c_str(), val.size());
+	ostm.write((const byte *)val.c_str(), val.size());
 
 	return ostm;
 }
@@ -975,7 +977,7 @@ template<typename same_endian_type>
 	if(size<=0)
 		return ostm;
 
-	ostm.write(val, size);
+	ostm.write((const byte *)val, size);
 
 	return ostm;
 }
@@ -989,24 +991,24 @@ public:
 	{
 		m_vec.clear();
 	}
-	const std::vector<char>& get_internal_vec()
+	const std::vector<byte>& get_internal_vec()
 	{
 		return m_vec;
 	}
 	template<typename T>
 	void write(const T& t)
 	{
-		std::vector<char> vec(sizeof(T));
+		std::vector<byte> vec(sizeof(T));
 		T t2 = t;
 		simple::swap_endian_if_same_endian_is_false(t2, m_same_type);
 		std::memcpy(reinterpret_cast<void*>(&vec[0]), reinterpret_cast<const void*>(&t2), sizeof(T));
 		write(vec);
 	}
-	void write(const std::vector<char>& vec)
+	void write(const std::vector<byte>& vec)
 	{
 		m_vec.insert(m_vec.end(), vec.begin(), vec.end());
 	}
-	void write(const char* p, size_t size)
+	void write(const byte* p, size_t size)
 	{
 		for (size_t i = 0; i<size; ++i)
 			m_vec.push_back(p[i]);
@@ -1014,14 +1016,14 @@ public:
 	template<typename T>
 	void writeat(size_t pos, const T& t)
 	{
-		std::vector<char> vec(sizeof(T));
+		std::vector<byte> vec(sizeof(T));
 		T t2 = t;
 		simple::swap_endian_if_same_endian_is_false(t2, m_same_type);
 		std::memcpy(reinterpret_cast<void*>(&vec[0]), reinterpret_cast<const void*>(&t2), sizeof(T));
 		writeat(pos, vec);
 	}
 
-	void writeat(size_t pos, const std::vector<char>& vec)
+	void writeat(size_t pos, const std::vector<byte>& vec)
 	{
 		for (size_t n = 0, count = vec.size(); n < count; n++)
 			m_vec[pos++] = vec[n];
@@ -1062,7 +1064,7 @@ public:
 #endif
 
 private:
-	std::vector<char> m_vec;
+	std::vector<byte> m_vec;
 	same_endian_type m_same_type;
 };
 
@@ -1083,7 +1085,7 @@ template<typename same_endian_type>
 	if (val.size() <= 0)
 		return ostm;
 
-	ostm.write(val.c_str(), val.size());
+	ostm.write((const byte *)val.c_str(), val.size());
 
 	return ostm;
 }
@@ -1097,7 +1099,7 @@ template<typename same_endian_type>
 	if (size <= 0)
 		return ostm;
 
-	ostm.write(val, size);
+	ostm.write((const byte *)val, size);
 
 	return ostm;
 }
