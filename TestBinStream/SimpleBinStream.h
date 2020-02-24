@@ -19,6 +19,7 @@
 //                   wide char type.(only available on win32)
 // version 1.0.3   : Remove <iostream> header
 // version 1.0.4   : Fixed file_istream's seekg() and added writeat() to mem_ostream and memfile_ostream. Thanks Festering from CodeProject.
+// version 1.0.4.1 : Use byte instead of char, since byte is more suitable for bin streams.
 
 #ifndef SimpleBinStream_H
 #define SimpleBinStream_H
